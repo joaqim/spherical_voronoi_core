@@ -98,7 +98,7 @@ namespace sv
         {
         }
         uint32_t index;
-        cell_ptr cell;
+        cell_ptr pCell;
         cell_ptr otherCell;
         vertex_ptr start;
         vertex_ptr end;
@@ -108,8 +108,8 @@ namespace sv
 
         void reset()
         {
-            cell.reset();
-            start.reset();
+          pCell.reset();
+          start.reset();
             end.reset();
             prev.reset();
             next.reset();
@@ -127,34 +127,34 @@ namespace sv
     {
     public:
         beach_arc(std::shared_ptr<cell> cell_)
-        : cell(cell_)
-        {
-        }
+          : pCell(cell_)
+      {
+      }
 
-        std::shared_ptr<cell> cell;
+      std::shared_ptr<cell> pCell;
 
-        std::shared_ptr<circle_event> circleEvent;      // the related circle event
+      std::shared_ptr<circle_event> circleEvent;      // the related circle event
 
-        std::shared_ptr<vertex> startVertex;
+      std::shared_ptr<vertex> startVertex;
 
-        bool operator< (const beach_arc& ba) const
-        {
-            return cell->point.phi < ba.cell->point.phi;
-        }
+      bool operator< (const beach_arc& ba) const
+      {
+        return pCell->point.phi < ba.pCell->point.phi;
+      }
 
-        friend std::ostream& operator<< (std::ostream& stream, const beach_arc& arc)
-        {
-            stream << "cell " << *arc.cell;
-            if (arc.startVertex)
-            {
-                stream << "startVertex " << *arc.startVertex;
-            }
-            else
-            {
-                stream << "startVertex NONE";
-            }
-            return stream;
-        }
+      friend std::ostream& operator<< (std::ostream& stream, const beach_arc& arc)
+      {
+        stream << "cell " << *arc.pCell;
+        if (arc.startVertex)
+          {
+            stream << "startVertex " << *arc.startVertex;
+          }
+        else
+          {
+            stream << "startVertex NONE";
+          }
+        return stream;
+      }
     };
 
     typedef std::shared_ptr<beach_arc> beach_arc_ptr;
@@ -164,25 +164,25 @@ namespace sv
     {
     public:
         site_event(std::shared_ptr<cell> cell_)
-        : cell(cell_)
-        {
-            theta = cell->point.theta;
-            phi = cell->point.phi;
-        }
+          : pCell(cell_)
+      {
+        theta = pCell->point.theta;
+        phi = pCell->point.phi;
+      }
 
-        std::shared_ptr<cell> cell;
-        Real theta;
-        Real phi;
+      std::shared_ptr<cell> pCell;
+      Real theta;
+      Real phi;
 
-        bool operator< (const site_event& right) const
-        {
-            return (theta < right.theta) || (theta == right.theta && phi < right.phi);
-        }
+      bool operator< (const site_event& right) const
+      {
+        return (theta < right.theta) || (theta == right.theta && phi < right.phi);
+      }
 
-        friend std::ostream& operator<< (std::ostream& stream, const site_event& e)
-        {
-            return stream << *e.cell;
-        }
+      friend std::ostream& operator<< (std::ostream& stream, const site_event& e)
+      {
+        return stream << *e.pCell;
+      }
     };
 
     class circle_event
@@ -205,9 +205,9 @@ namespace sv
         beach_arc_ptr arc_j;
         beach_arc_ptr arc_k;
 
-        cell_ptr cell_i() const { return arc_i->cell; }
-        cell_ptr cell_j() const { return arc_j->cell; }
-        cell_ptr cell_k() const { return arc_k->cell; }
+        cell_ptr cell_i() const { return arc_i->pCell; }
+        cell_ptr cell_j() const { return arc_j->pCell; }
+        cell_ptr cell_k() const { return arc_k->pCell; }
 
         Point circle_center;
         Real circle_radius;

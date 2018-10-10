@@ -12,6 +12,8 @@
 #include "svMath.h"
 #include "svData.h"
 
+#include <functional> // for std::function
+
 namespace sv
 {
     class SphericalVoronoiCore

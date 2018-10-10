@@ -73,7 +73,7 @@ namespace sv
         for (auto itArc=beach.begin(); itArc!=beach.end(); ++itArc)
         {
             auto arc = *itArc;
-            stream << arc->cell->index;
+            stream << arc->pCell->index;
             if (arc->circleEvent)
             {
                 auto itPrevArc = getPrevArcOnBeach(itArc);
@@ -208,20 +208,20 @@ namespace sv
 
         for (auto& v0 : vertices)
         {
-            if (v0->cells.size() == 2)
-            {
-                assert(v0->halfEdges.size() == 2);
-                auto v1 = v0->halfEdges[0]->end;
-                auto v2 = v0->halfEdges[1]->end;
+          if (v0->cells.size() == 2)
+          {
+            assert(v0->halfEdges.size() == 2);
+            auto v1 = v0->halfEdges[0]->end;
+            auto v2 = v0->halfEdges[1]->end;
 
-                auto newEdge = make_shared<half_edge>(v1, v2);
-                v1->halfEdges.push_back(newEdge);
-                halfEdges.push_back(newEdge);
+            auto newEdge = make_shared<half_edge>(v1, v2);
+            v1->halfEdges.push_back(newEdge);
+            halfEdges.push_back(newEdge);
 
-                deleteVertices.push_back(v0);
-                deleteHalfEdges.push_back(v0->halfEdges[0]);
-                deleteHalfEdges.push_back(v0->halfEdges[1]);
-            }
+            deleteVertices.push_back(v0);
+            deleteHalfEdges.push_back(v0->halfEdges[0]);
+            deleteHalfEdges.push_back(v0->halfEdges[1]);
+          }
         }
 
         SV_DEBUG(cout << "Vertices to delete : " << deleteVertices.size() << endl);
@@ -266,7 +266,7 @@ namespace sv
 
         for (auto& e : halfEdges)
         {
-            e->cell.reset();
+            e->pCell.reset();
             e->next.reset();
             e->prev.reset();
         }
@@ -290,7 +290,7 @@ namespace sv
                 c = common[1];
             }
 
-            e->cell = c;
+            e->pCell = c;
             c->halfEdges.push_back(e);
         }
 
@@ -326,91 +326,91 @@ namespace sv
 
         for (auto& e : halfEdges)
         {
-            e->otherCell = e->twin->cell;
+          e->otherCell = e->twin->pCell;
         }
     }
 
 
     bool SphericalVoronoiCore::arcsIntersection(const beach_arc& arc1, const beach_arc& arc2, Real xi, Point& oPoint)
     {
-        Real theta1 = arc1.cell->point.theta;
-        Real phi1 = arc1.cell->point.phi;
+      Real theta1 = arc1.pCell->point.theta;
+      Real phi1 = arc1.pCell->point.phi;
 
-        Real theta2 = arc2.cell->point.theta;
-        Real phi2 = arc2.cell->point.phi;
+      Real theta2 = arc2.pCell->point.theta;
+      Real phi2 = arc2.pCell->point.phi;
 
-        if (theta1 >= xi)
-        {
-            if (theta2 >= xi)
-            {
-                return false;
-            }
-            else
-            {
-                Point pt = phiToPoint(phi1, xi, theta2, phi2);
-                oPoint = pt;
-                return true;
-            }
-        }
+      if (theta1 >= xi)
+      {
         if (theta2 >= xi)
         {
-            if (theta1 >= xi)
-            {
-                return false;
-            }
-            else
-            {
-                Point pt = phiToPoint(phi2, xi, theta1, phi1);
-                oPoint = pt;
-                return true;
-            }
-        }
-
-        Real cos_xi = glm::cos(xi);
-        Real sin_xi = glm::sin(xi);
-        Real cos_theta1 = glm::cos(theta1);
-        Real sin_theta1 = glm::sin(theta1);
-        Real cos_theta2 = glm::cos(theta2);
-        Real sin_theta2 = glm::sin(theta2);
-        Real cos_phi1 = glm::cos(phi1);
-        Real sin_phi1 = glm::sin(phi1);
-        Real cos_phi2 = glm::cos(phi2);
-        Real sin_phi2 = glm::sin(phi2);
-        Real a1 = (cos_xi - cos_theta2) * sin_theta1 * cos_phi1;
-        Real a2 = (cos_xi - cos_theta1) * sin_theta2 * cos_phi2;
-        Real a = a1 - a2;
-        Real b1 = (cos_xi - cos_theta2) * sin_theta1 * sin_phi1;
-        Real b2 = (cos_xi - cos_theta1) * sin_theta2 * sin_phi2;
-        Real b = b1 - b2;
-        Real c = (cos_theta1 - cos_theta2) * sin_xi;
-        Real l = glm::sqrt(a*a + b*b);
-        if (abs(a) > l || abs(c) > l)
-        {
-            return false;
+          return false;
         }
         else
         {
-            auto gamma = glm::atan(a, b);
-            auto sin_phi_int_plus_gamma_1 = c / l;
-            //auto sin_phi_int_plus_gamma_2 = - c / l;
-            auto phi_int_plus_gamma_1 = glm::asin(sin_phi_int_plus_gamma_1);
-            //auto phi_int_plus_gamma_2 = asin(sin_phi_int_plus_gamma_2);
-            auto pA = phi_int_plus_gamma_1 - gamma;
-            //auto pB = phi_int_plus_gamma_2 - gamma;
-            Point ptA_1 = phiToPoint(pA, xi, theta1, phi1);
-//            point ptA_2 = phiToPoint(pA, xi, theta2, phi2);
-//            assert(glm::distance(ptA_1.position, ptA_2.position) < eps);
-            oPoint = ptA_1;
-            if (oPoint.phi > M_PI)
-            {
-                oPoint.phi -= M_PI * 2;
-            }
-            if (oPoint.phi < -M_PI)
-            {
-                oPoint.phi += M_PI * 2;
-            }
-            return true;
+          Point pt = phiToPoint(phi1, xi, theta2, phi2);
+          oPoint = pt;
+          return true;
         }
+      }
+      if (theta2 >= xi)
+      {
+        if (theta1 >= xi)
+        {
+          return false;
+        }
+        else
+        {
+          Point pt = phiToPoint(phi2, xi, theta1, phi1);
+          oPoint = pt;
+          return true;
+        }
+      }
+
+      Real cos_xi = glm::cos(xi);
+      Real sin_xi = glm::sin(xi);
+      Real cos_theta1 = glm::cos(theta1);
+      Real sin_theta1 = glm::sin(theta1);
+      Real cos_theta2 = glm::cos(theta2);
+      Real sin_theta2 = glm::sin(theta2);
+      Real cos_phi1 = glm::cos(phi1);
+      Real sin_phi1 = glm::sin(phi1);
+      Real cos_phi2 = glm::cos(phi2);
+      Real sin_phi2 = glm::sin(phi2);
+      Real a1 = (cos_xi - cos_theta2) * sin_theta1 * cos_phi1;
+      Real a2 = (cos_xi - cos_theta1) * sin_theta2 * cos_phi2;
+      Real a = a1 - a2;
+      Real b1 = (cos_xi - cos_theta2) * sin_theta1 * sin_phi1;
+      Real b2 = (cos_xi - cos_theta1) * sin_theta2 * sin_phi2;
+      Real b = b1 - b2;
+      Real c = (cos_theta1 - cos_theta2) * sin_xi;
+      Real l = glm::sqrt(a*a + b*b);
+      if (abs(a) > l || abs(c) > l)
+      {
+        return false;
+      }
+      else
+      {
+        auto gamma = glm::atan(a, b);
+        auto sin_phi_int_plus_gamma_1 = c / l;
+        //auto sin_phi_int_plus_gamma_2 = - c / l;
+        auto phi_int_plus_gamma_1 = glm::asin(sin_phi_int_plus_gamma_1);
+        //auto phi_int_plus_gamma_2 = asin(sin_phi_int_plus_gamma_2);
+        auto pA = phi_int_plus_gamma_1 - gamma;
+        //auto pB = phi_int_plus_gamma_2 - gamma;
+        Point ptA_1 = phiToPoint(pA, xi, theta1, phi1);
+        //            point ptA_2 = phiToPoint(pA, xi, theta2, phi2);
+        //            assert(glm::distance(ptA_1.position, ptA_2.position) < eps);
+        oPoint = ptA_1;
+        if (oPoint.phi > M_PI)
+        {
+          oPoint.phi -= M_PI * 2;
+        }
+        if (oPoint.phi < -M_PI)
+        {
+          oPoint.phi += M_PI * 2;
+        }
+        return true;
+      }
     }
 
     bool SphericalVoronoiCore::intersectWithNextArc(beach_type::const_iterator itArc, Real xi, Point& oPoint) const
@@ -443,15 +443,15 @@ namespace sv
 
         if (beach.size() == 0)
         {
-            beach.emplace_back(make_shared<beach_arc>(event.cell));
+          beach.emplace_back(make_shared<beach_arc>(event.pCell));
         }
         else if (beach.size() == 1)
         {
-            beach.emplace_back(make_shared<beach_arc>(event.cell));
-            auto arc = beach[0];
+          beach.emplace_back(make_shared<beach_arc>(event.pCell));
+          auto arc = beach[0];
             auto newArc = beach[1];
-            Point p = phiToPoint(event.phi, scanLine.xi, arc->cell->point.theta, arc->cell->point.phi);
-            std::shared_ptr<vertex> newVertex = std::shared_ptr<vertex>(new vertex(p, event.cell, arc->cell));
+            Point p = phiToPoint(event.phi, scanLine.xi, arc->pCell->point.theta, arc->pCell->point.phi);
+            std::shared_ptr<vertex> newVertex = std::shared_ptr<vertex>(new vertex(p, event.pCell, arc->pCell));
             vertices.push_back(newVertex);
             arc->startVertex = newVertex;
             newArc->startVertex = newVertex;
@@ -473,13 +473,13 @@ namespace sv
                 intPrev = intersectWithPrevArc(itArc, scanLine.xi, pointPrev);
                 intNext = intersectWithNextArc(itArc, scanLine.xi, pointNext);
 
-                Real phi_start = arc->cell->point.phi - M_PI;
+                Real phi_start = arc->pCell->point.phi - M_PI;
                 if (intPrev)
                 {
                     phi_start = pointPrev.phi;
                 }
 
-                Real phi_end = arc->cell->point.phi + M_PI;
+                Real phi_end = arc->pCell->point.phi + M_PI;
                 if (intNext)
                 {
                     phi_end = pointNext.phi;
@@ -507,15 +507,15 @@ namespace sv
                         removeCircleEvent(arc->circleEvent);
                         arc->circleEvent.reset();
                     }
-                    beach_type::const_iterator itArc2 = beach.insert(itArc, make_shared<beach_arc>(arc->cell));
+                    beach_type::const_iterator itArc2 = beach.insert(itArc, make_shared<beach_arc>(arc->pCell));
                     itArc = std::next(itArc2);
                     auto arc2 = *itArc2;
-                    beach_type::const_iterator itNewArc = beach.insert(itArc, make_shared<beach_arc>(event.cell));
+                    beach_type::const_iterator itNewArc = beach.insert(itArc, make_shared<beach_arc>(event.pCell));
                     itArc = std::next(itNewArc);
                     auto newArc = *itNewArc;
 
-                    Point p = phiToPoint(event.phi, scanLine.xi, arc->cell->point.theta, arc->cell->point.phi);
-                    std::shared_ptr<vertex> newVertex = std::shared_ptr<vertex>(new vertex(p, event.cell, arc->cell));
+                    Point p = phiToPoint(event.phi, scanLine.xi, arc->pCell->point.theta, arc->pCell->point.phi);
+                    std::shared_ptr<vertex> newVertex = std::shared_ptr<vertex>(new vertex(p, event.pCell, arc->pCell));
                     vertices.push_back(newVertex);
 
                     arc2->startVertex = newArc->startVertex = newVertex;
@@ -594,7 +594,7 @@ namespace sv
             arc_k->circleEvent.reset();
         }
 
-        auto newVertex = make_shared<vertex>(event->circle_center, arc_i->cell, arc_j->cell, arc_k->cell);
+        auto newVertex = make_shared<vertex>(event->circle_center, arc_i->pCell, arc_j->pCell, arc_k->pCell);
         vertices.push_back(newVertex);
 
         if (arc_i->startVertex)
@@ -647,7 +647,7 @@ namespace sv
             auto& arc_1 = *itArc1;
             auto& arc_2 = *itArc2;
 
-            if (arc_1->cell->index != arc_i->cell->index && arc_i->cell->index != arc_k->cell->index && arc_1->cell->index != arc_k->cell->index)
+            if (arc_1->pCell->index != arc_i->pCell->index && arc_i->pCell->index != arc_k->pCell->index && arc_1->pCell->index != arc_k->pCell->index)
             {
 //                assert(isArcOnBeach(arc_1));
 //                assert(isArcOnBeach(arc_i));
@@ -663,7 +663,7 @@ namespace sv
                 }
             }
 
-            if (arc_i->cell->index != arc_k->cell->index && arc_k->cell->index != arc_2->cell->index && arc_i->cell->index != arc_2->cell->index)
+            if (arc_i->pCell->index != arc_k->pCell->index && arc_k->pCell->index != arc_2->pCell->index && arc_i->pCell->index != arc_2->pCell->index)
             {
 //                assert(isArcOnBeach(arc_i));
 //                assert(isArcOnBeach(arc_k));

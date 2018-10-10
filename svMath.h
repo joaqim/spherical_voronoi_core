@@ -11,14 +11,22 @@
 
 #include <cassert>
 #include <ostream>
+#include <sstream>
+#include <vector>
 #include <tuple>
 #include <bitset>
+#include <numeric> // for std::accumulate
+
 
 #ifndef GLM_FORCE_RADIANS
 #define GLM_FORCE_RADIANS
 #endif
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+
+using namespace glm;
 #include "xs_Float.h"  // http://stereopsis.com/sree/fpu2006.html
 
 #include "svBase.h"
@@ -278,7 +286,7 @@ namespace sv
     class PositionT
     {
     public:
-        using Vec3 = glm::detail::tvec3<T>;
+        using Vec3 = glm::tvec3<T>;
         PositionT();
         PositionT(ECubeFace face, T s, T t, T p);
         PositionT(ECubeFace face, const Vec3& stp);
