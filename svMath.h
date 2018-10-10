@@ -22,9 +22,10 @@
 #define GLM_FORCE_RADIANS
 #endif
 
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#define GLM_ENABLE_EXPERIMENTAL 
+#define GLM_ENABLE_EXPERIMENTAL //NOTE: For using glm::transform, maybe deprecated?
 #include <glm/gtx/transform.hpp>
 
 using namespace glm;
@@ -39,11 +40,12 @@ using namespace glm;
 
 namespace sv
 {
-  typedef double Real;
-  typedef glm::dvec2 Real2;
-  typedef glm::dvec3 Real3;
-  typedef glm::dvec4 Real4;
-  typedef glm::dmat4 Mat4;
+
+  typedef float Real; //NOTE: Lazy way of using float instead of double, also changed dvec# -> fvec# ; dmat4 -> fmat6
+  typedef glm::fvec2 Real2;
+  typedef glm::fvec3 Real3;
+  typedef glm::fvec4 Real4;
+  typedef glm::fmat4 Mat4;
     
   typedef glm::vec2 F2;
   typedef glm::vec3 F3;
@@ -119,10 +121,14 @@ namespace sv
       assignDirection(Real3(x, y, z));
     }
         
- Point(const F3& pos)
-     : Point(pos.x, pos.y, pos.z)
-    {
-    }
+
+ //NOTE: Redefinition when using float instead of double
+        /*
+          Point(const F3& pos)
+            : Point(pos.x, pos.y, pos.z)
+         {
+         }
+        */
         
     Real theta;
     Real phi;
@@ -304,9 +310,10 @@ namespace sv
     Vec3 m_spacePosition;
   };
     
-  typedef PositionT<Real> Position;
-  typedef PositionT<float> PositionF;
-  typedef PositionT<double> PositionD;
+    //typedef PositionT<Real> Position;
+    typedef PositionT<float> PositionF;
+    typedef PositionT<float> Position;
+    typedef PositionT<double> PositionD;
 }
 
 #include "svMath.hpp"

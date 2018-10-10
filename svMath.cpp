@@ -169,8 +169,8 @@ namespace sv
             
             for (auto angle=deltaAngle; angle<distance; angle+=deltaAngle)
             {
-                Mat4 rotation = glm::rotate(Mat4(1.0), angle, direction);
-                Real3 pos = glm::normalize(Real3(rotation * Real4(start.position, 1.0)));
+              Mat4 rotation = glm::rotate(Mat4(1.0), angle, direction);
+              Real3 pos = glm::normalize(Real3(rotation * Real4(start.position, 1.0)));
                 
                 result.push_back(pos);
             }
