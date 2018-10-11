@@ -191,14 +191,13 @@ namespace sv
         circle_event(const beach_arc_ptr& arc_i_, const beach_arc_ptr& arc_j_, const beach_arc_ptr& arc_k_)
         : arc_i(arc_i_), arc_j(arc_j_), arc_k(arc_k_)
         {
-            using namespace glm;
 
-            auto pij = cell_i()->point.position - cell_j()->point.position;
+          auto pij = cell_i()->point.position - cell_j()->point.position;
             auto pkj = cell_k()->point.position - cell_j()->point.position;
             auto direction = cross(pij, pkj);
             circle_center = Point(direction);
             circle_radius = acos(dot(circle_center.position, cell_i()->point.position));
-            theta = acos(circle_center.position.z) + circle_radius;
+            theta = acos(circle_center.position.z()) + circle_radius;
         }
 
         beach_arc_ptr arc_i;

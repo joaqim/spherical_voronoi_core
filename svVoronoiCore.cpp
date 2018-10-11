@@ -11,49 +11,71 @@
 
 #define SV_DEBUG(...)   do { if (debugMode) { __VA_ARGS__; } } while(0)
 
+#ifndef eps
+#define eps 1e-9
+#endif
+
 namespace sv
 {
-    namespace
-    {
-        struct IndexedDirection
-        {
-            IndexedDirection(const Real3& dir, int id)
-            : direction(dir)
-            , index(id)
-            {
-            }
 
-            Real3 direction;
-            int index;
-        };
-    }
+bool comparePhi(float const lhs, float const rhs) {
+  return(static_cast<int>(lhs*1000.0) == static_cast<int>(rhs*1000.0));
+}
 
-    SphericalVoronoiCore::SphericalVoronoiCore(const std::vector<Real3>& directions)
-    : scanLine(), nbSteps(0), debugMode(false)
+namespace
+{
+struct IndexedDirection
+{
+  IndexedDirection(const Real3& dir, int id)
+      : direction(dir)
+      , index(id)
+  {
+  }
+
+  Real3 direction;
+  int index;
+};
+}
+
+SphericalVoronoiCore::SphericalVoronoiCore(const std::vector<Real3>& directions)
+        : scanLine(), nbSteps(0), debugMode(true)
     {
-        using namespace glm;
         using namespace std;
 
         std::vector<std::pair<int, Real3>> sortedDirections;
         for (auto& dir : directions)
         {
-            sortedDirections.push_back(std::pair<int, Real3>(sortedDirections.size(), dir));
+          sortedDirections.push_back(std::pair<int, Real3>(sortedDirections.size(), dir));
         }
 
-        sort(sortedDirections.begin(), sortedDirections.end(), [](const std::pair<int, Real3>& a, const std::pair<int, Real3>& b) { return a.second.z > b.second.z; });
+        sort(sortedDirections.begin(), sortedDirections.end(), [](const std::pair<int, Real3>& a, const std::pair<int, Real3>& b) { return a.second.z() > b.second.z(); });
         for (size_t i=0; i<sortedDirections.size(); ++i)
         {
             auto& d = sortedDirections[i].second;
             if (length(d) < eps) continue;
             Point p(d);
+            //SV_DEBUG(std::cout << "Position: ("<< d.x() << ", " << d.y() << ", "<< d.z() << ")\n");
             for (auto& cell : cells)
             {
-                if (cell->point.equalWithEps(p, eps))
-                {
-                    continue;
-                }
+              if (cell->point.equalWithEps(p, eps))
+              {
+                continue;
+              }
+#if 0 //TODO: Remove this after debugging
+              if(cell->index == 54) {
+                //assert(cell->point.phi == 0.775055f);
+                //assert(comparePhi(cell->point.phi, 0.775055f));
+                std::cout << cell->point.phi << std::endl;
+                assert(!comparePhi(cell->point.phi, 0.795741f));
+                //assert(cell->point.phi != 0.795741f);
+              }
+#endif
             }
+
             auto c = shared_ptr<cell>(new cell(sortedDirections[i].first, p));
+            //SV_DEBUG(std::cout << "\t index: " << c->index << ",\t phi: " << c->point.phi << "\n");
+
+            //std::cout << "\t position: "  << c->point.position.y() << "\n";
             cells.push_back(c);
 
             addNewSiteEvent(site_event(c));
@@ -171,7 +193,6 @@ namespace sv
     void SphericalVoronoiCore::finializeGraph()
     {
         using namespace std;
-        using namespace glm;
 
         SV_DEBUG(cout << "Finalize graph" << endl);
 
@@ -279,9 +300,9 @@ namespace sv
             cell_ptr c0 = common[0];
             Real3 d0 = e->start->point.position - c0->point.position;
             Real3 d1 = e->end->point.position - c0->point.position;
-            Real3 n = glm::cross(d0, d1);
+            Real3 n = cross(d0, d1);
             cell_ptr c = nullptr;
-            if (glm::dot(n, c0->point.position) > 0)
+            if (dot(n, c0->point.position) > 0)
             {
                 c = c0;
             }
@@ -366,16 +387,16 @@ namespace sv
         }
       }
 
-      Real cos_xi = glm::cos(xi);
-      Real sin_xi = glm::sin(xi);
-      Real cos_theta1 = glm::cos(theta1);
-      Real sin_theta1 = glm::sin(theta1);
-      Real cos_theta2 = glm::cos(theta2);
-      Real sin_theta2 = glm::sin(theta2);
-      Real cos_phi1 = glm::cos(phi1);
-      Real sin_phi1 = glm::sin(phi1);
-      Real cos_phi2 = glm::cos(phi2);
-      Real sin_phi2 = glm::sin(phi2);
+      Real cos_xi = cos(xi);
+      Real sin_xi = sin(xi);
+      Real cos_theta1 = cos(theta1);
+      Real sin_theta1 = sin(theta1);
+      Real cos_theta2 = cos(theta2);
+      Real sin_theta2 = sin(theta2);
+      Real cos_phi1 = cos(phi1);
+      Real sin_phi1 = sin(phi1);
+      Real cos_phi2 = cos(phi2);
+      Real sin_phi2 = sin(phi2);
       Real a1 = (cos_xi - cos_theta2) * sin_theta1 * cos_phi1;
       Real a2 = (cos_xi - cos_theta1) * sin_theta2 * cos_phi2;
       Real a = a1 - a2;
@@ -383,23 +404,22 @@ namespace sv
       Real b2 = (cos_xi - cos_theta1) * sin_theta2 * sin_phi2;
       Real b = b1 - b2;
       Real c = (cos_theta1 - cos_theta2) * sin_xi;
-      Real l = glm::sqrt(a*a + b*b);
+      Real l = sqrt(a*a + b*b);
       if (abs(a) > l || abs(c) > l)
       {
         return false;
       }
       else
       {
-        auto gamma = glm::atan(a, b);
+        auto gamma = atan2(a, b);
         auto sin_phi_int_plus_gamma_1 = c / l;
-        //auto sin_phi_int_plus_gamma_2 = - c / l;
-        auto phi_int_plus_gamma_1 = glm::asin(sin_phi_int_plus_gamma_1);
-        //auto phi_int_plus_gamma_2 = asin(sin_phi_int_plus_gamma_2);
+
+        float phi_int_plus_gamma_1 = asin(sin_phi_int_plus_gamma_1);
+
         auto pA = phi_int_plus_gamma_1 - gamma;
-        //auto pB = phi_int_plus_gamma_2 - gamma;
+
         Point ptA_1 = phiToPoint(pA, xi, theta1, phi1);
-        //            point ptA_2 = phiToPoint(pA, xi, theta2, phi2);
-        //            assert(glm::distance(ptA_1.position, ptA_2.position) < eps);
+
         oPoint = ptA_1;
         if (oPoint.phi > M_PI)
         {
@@ -688,9 +708,9 @@ namespace sv
         if (theta != 0)
         {
             auto theta_p = theta1;
-            auto cos_delta_phi = ((glm::cos(xi) - glm::cos(theta_p)) / glm::tan(theta) + glm::sin(xi)) / glm::sin(theta_p);
-            cos_delta_phi = glm::clamp<Real>(cos_delta_phi, -1.0, 1.0);
-            delta_phi = glm::acos(cos_delta_phi);
+            auto cos_delta_phi = ((cos(xi) - cos(theta_p)) / tan(theta) + sin(xi)) / sin(theta_p);
+            cos_delta_phi = Magnum::Math::clamp<Real>(cos_delta_phi, -1.0, 1.0);
+            delta_phi = acos(cos_delta_phi);
         }
         Real s = positive ? 1 : -1;
         Point p(theta, phi1 + delta_phi * s);
@@ -706,9 +726,9 @@ namespace sv
         }
         else
         {
-            auto a = - (glm::sin(theta1) * glm::cos(phi - phi1) - glm::sin(xi));
-            auto b = - (glm::cos(xi) - glm::cos(theta1));
-            auto theta = glm::atan(b, a);
+            auto a = - (sin(theta1) * cos(phi - phi1) - sin(xi));
+            auto b = - (cos(xi) - cos(theta1));
+            auto theta = atan2(b, a);
             return Point(theta, phi);
         }
     }

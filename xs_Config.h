@@ -16,14 +16,14 @@
 // ====================================================================================================================
 #ifndef _xs_Types_
 #define _xs_Types_                  1
-    typedef char                    int8;
-    typedef unsigned char           uint8;
-    typedef short                   int16;
-    typedef unsigned short          uint16;
-    //typedef long                    int32;
-    typedef unsigned long           uint32;
-    typedef float                   real32;
-    typedef double                  real64;
+typedef char                    int8;
+typedef unsigned char           uint8;
+typedef short                   int16;
+typedef unsigned short          uint16;
+typedef long                    int32;
+typedef unsigned long           uint32;
+typedef float                   real32;
+typedef double                  real64;
 #endif //_xs_Types_
 
 
@@ -43,12 +43,12 @@
 #define xs_Clamp(a,b,c)		         xs_Min(xs_Max(a,b), c)
 
 #if _DEBUG
-    #include <assert.h>
-    #define xs_Verify(e)             assert(e)
-    #define xs_Assert(e)             assert(e)
+#include <assert.h>
+#define xs_Verify(e)             assert(e)
+#define xs_Assert(e)             assert(e)
 #else
-    #define xs_Verify(e)             (e)
-    #define xs_Assert(e)
+#define xs_Verify(e)             (e)
+#define xs_Assert(e)
 #endif
 
 
@@ -90,12 +90,12 @@ inline void* xs_Memzero (void* p,  int32 count, int32 size)              {return
 
 
 /*
-    void*   blockalloc(long size);
-    void*   blockrealloc(void* fp, long newsize);      
-    void    blockfree(void* p);
-    inline void* xs_PtrAlloc    (int32 count, int32 size)                    {return blockalloc(count*size);}
-    inline void* xs_PtrRealloc  (void* p, int32 count, int32 size)           {return blockrealloc(p, count*size);}
-    inline bool  xs_PtrFree     (void* p)                                    {blockfree(p); return true;}
+  void*   blockalloc(long size);
+  void*   blockrealloc(void* fp, long newsize);      
+  void    blockfree(void* p);
+  inline void* xs_PtrAlloc    (int32 count, int32 size)                    {return blockalloc(count*size);}
+  inline void* xs_PtrRealloc  (void* p, int32 count, int32 size)           {return blockrealloc(p, count*size);}
+  inline bool  xs_PtrFree     (void* p)                                    {blockfree(p); return true;}
 */
 // ====================================================================================================================
 // ====================================================================================================================
