@@ -24,14 +24,14 @@ namespace sv
         void setDebugMode(bool debugMode) { this->debugMode = debugMode; }
 
         bool isFinished() const;
-        void step(Real maxDeltaXi);
+        void step(float maxDeltaXi);
         void solve(std::function<void(int)> cb = nullptr);       // step until finished
 
-        const std::vector<half_edge_ptr>& getHalfEdges() const { return halfEdges; }
-        const std::vector<vertex_ptr>& getVertices() const { return vertices; }
-        const std::vector<cell_ptr>& getCells() const { return cells; }
+        const std::vector<HalfEdge_ptr>& getHalfEdges() const { return halfEdges; }
+        const std::vector<Vertex_ptr>& getVertices() const { return vertices; }
+        const std::vector<Cell_ptr>& getCells() const { return cells; }
 
-    protected:
+   protected:
         bool debugMode;
 
         void dumpBeachState(std::ostream& stream);
@@ -63,50 +63,57 @@ namespace sv
             return next;
         }
 
+        using Rad = Magnum::Math::Rad<float>;
 
-        bool intersectWithNextArc(beach_type::const_iterator itArc, Real xi, Point& oPoint) const;
-        bool intersectWithPrevArc(beach_type::const_iterator itArc, Real xi, Point& oPoint) const;
-        void handleSiteEvent(site_event& event);
-        void handleCircleEvent(const circle_event_ptr& event);
+        bool intersectWithNextArc(beach_type::const_iterator itArc, float xi, Point& oPoint) const;
+        bool intersectWithPrevArc(beach_type::const_iterator itArc, float xi, Point& oPoint) const;
+        bool intersectWithNextArc(beach_type::const_iterator itArc, Rad xi, Point& oPoint) const;
+        bool intersectWithPrevArc(beach_type::const_iterator itArc, Rad xi, Point& oPoint) const;
+        void handleSiteEvent(SiteEvent& event);
+        void handleCircleEvent(const CircleEvent_ptr& event);
 
-        static Point thetaToPoint(Real theta, bool positive, Real xi, Real theta1, Real phi1);
-        static Point phiToPoint(Real phi, Real xi, Real theta1, Real phi1);
-        static bool arcsIntersection(const beach_arc& arc1, const beach_arc& arc2, Real xi, Point& oPoint);
+        
+        static Point thetaToPoint(float theta, bool positive, float xi, float theta1, float phi1);
+        static Point thetaToPoint(Rad theta, bool positive, Rad xi, Rad theta1, Rad phi1);
+        static Point phiToPoint(float phi, float xi, float theta1, float phi1);
+        static Point phiToPoint(Rad phi, Rad xi, Rad theta1, Rad phi1);
+        static bool arcsIntersection(const BeachArc& arc1, const BeachArc& arc2, float xi, Point& oPoint);
+        static bool arcsIntersection(const BeachArc& arc1, const BeachArc& arc2, Magnum::Math::Rad<float> xi, Point &oPoint);
 
         int nbSteps;
         SphericalLine scanLine;
 
-        constexpr static Real eps = 1e-5;
+        constexpr static float eps = 1e-5;
 
-        std::vector<half_edge_ptr> halfEdges;
-        std::vector<vertex_ptr> vertices;
-        std::vector<cell_ptr> cells;
+        std::vector<HalfEdge_ptr> halfEdges;
+        std::vector<Vertex_ptr> vertices;
+        std::vector<Cell_ptr> cells;
 
         beach_type beach;
 
-        bool isArcOnBeach(const beach_arc_ptr& arc) const
+        bool isArcOnBeach(const BeachArc_ptr& arc) const
         {
             return find(beach.begin(), beach.end(), arc) != beach.end();
         }
 
-        std::vector<site_event> siteEventQueue;
-        std::vector<circle_event_ptr> circleEventQueue;
+        std::vector<SiteEvent> siteEventQueue;
+        std::vector<CircleEvent_ptr> circleEventQueue;
 
-        void addNewSiteEvent(const site_event& event)
+        void addNewSiteEvent(const SiteEvent& event)
         {
             using namespace std;
             auto it = lower_bound(siteEventQueue.begin(), siteEventQueue.end(), event);
             siteEventQueue.insert(it, event);
         }
 
-        void addNewCircleEvent(const std::shared_ptr<circle_event>& event)
+        void addNewCircleEvent(const std::shared_ptr<CircleEvent>& event)
         {
             using namespace std;
             auto it = lower_bound(circleEventQueue.begin(), circleEventQueue.end(), event, compare_circle_event_priority());
             circleEventQueue.insert(it, event);
         }
 
-        void removeCircleEvent(const std::shared_ptr<circle_event>& event)
+        void removeCircleEvent(const std::shared_ptr<CircleEvent>& event)
         {
             using namespace std;
             auto it = find(circleEventQueue.begin(), circleEventQueue.end(), event);
