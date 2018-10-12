@@ -231,7 +231,8 @@ namespace sv
     {
         bool operator()(const std::shared_ptr<circle_event>& left, const std::shared_ptr<circle_event>& right) const
         {
-            return *left < *right;
+          return *left < *right; //NOTE: Not sure
+          //return *right < *left;
         }
     };
 

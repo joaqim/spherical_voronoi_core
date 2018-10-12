@@ -13,8 +13,7 @@
 namespace sv
 {
 
-std::tuple<Real3, CubeFaceBitSet> Point::cubeCoord() const
-{
+std::tuple<Real3, CubeFaceBitSet> Point::cubeCoord() const {
   Real3 absPos = Magnum::Math::abs(position);
   Real3 result;
   CubeFaceBitSet faceSet;

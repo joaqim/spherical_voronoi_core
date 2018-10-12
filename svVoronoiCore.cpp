@@ -38,160 +38,160 @@ struct IndexedDirection
 }
 
 SphericalVoronoiCore::SphericalVoronoiCore(const std::vector<Real3>& directions)
-        : scanLine(), nbSteps(0), debugMode(true)
+    : scanLine(), nbSteps(0), debugMode(false)
+{
+  using namespace std;
+
+  std::vector<std::pair<int, Real3>> sortedDirections;
+  for (auto& dir : directions)
+  {
+    sortedDirections.push_back(std::pair<int, Real3>(sortedDirections.size(), dir));
+  }
+
+  sort(sortedDirections.begin(), sortedDirections.end(), [](const std::pair<int, Real3>& a, const std::pair<int, Real3>& b) { return a.second.z() > b.second.z(); });
+  for (size_t i=0; i<sortedDirections.size(); ++i)
+  {
+    auto& d = sortedDirections[i].second;
+    if (length(d) < eps) continue;
+    Point p(d);
+    //SV_DEBUG(std::cout << "Position: ("<< d.x() << ", " << d.y() << ", "<< d.z() << ")\n");
+    for (auto& cell : cells)
     {
-        using namespace std;
-
-        std::vector<std::pair<int, Real3>> sortedDirections;
-        for (auto& dir : directions)
-        {
-          sortedDirections.push_back(std::pair<int, Real3>(sortedDirections.size(), dir));
-        }
-
-        sort(sortedDirections.begin(), sortedDirections.end(), [](const std::pair<int, Real3>& a, const std::pair<int, Real3>& b) { return a.second.z() > b.second.z(); });
-        for (size_t i=0; i<sortedDirections.size(); ++i)
-        {
-            auto& d = sortedDirections[i].second;
-            if (length(d) < eps) continue;
-            Point p(d);
-            //SV_DEBUG(std::cout << "Position: ("<< d.x() << ", " << d.y() << ", "<< d.z() << ")\n");
-            for (auto& cell : cells)
-            {
-              if (cell->point.equalWithEps(p, eps))
-              {
-                continue;
-              }
+      if (cell->point.equalWithEps(p, eps))
+      {
+        continue;
+      }
 #if 0 //TODO: Remove this after debugging
-              if(cell->index == 54) {
-                //assert(cell->point.phi == 0.775055f);
-                //assert(comparePhi(cell->point.phi, 0.775055f));
-                std::cout << cell->point.phi << std::endl;
-                assert(!comparePhi(cell->point.phi, 0.795741f));
-                //assert(cell->point.phi != 0.795741f);
-              }
+      if(cell->index == 54) {
+        //assert(cell->point.phi == 0.775055f);
+        //assert(comparePhi(cell->point.phi, 0.775055f));
+        std::cout << cell->point.phi << std::endl;
+        assert(!comparePhi(cell->point.phi, 0.795741f));
+        //assert(cell->point.phi != 0.795741f);
+      }
 #endif
-            }
-
-            auto c = shared_ptr<cell>(new cell(sortedDirections[i].first, p));
-            //SV_DEBUG(std::cout << "\t index: " << c->index << ",\t phi: " << c->point.phi << "\n");
-
-            //std::cout << "\t position: "  << c->point.position.y() << "\n";
-            cells.push_back(c);
-
-            addNewSiteEvent(site_event(c));
-        }
     }
 
-    bool SphericalVoronoiCore::isFinished() const
+    auto c = shared_ptr<cell>(new cell(sortedDirections[i].first, p));
+    //SV_DEBUG(std::cout << "\t index: " << c->index << ",\t phi: " << c->point.phi << "\n");
+
+    //std::cout << "\t position: "  << c->point.position.y() << "\n";
+    cells.push_back(c);
+
+    addNewSiteEvent(site_event(c));
+  }
+}
+
+bool SphericalVoronoiCore::isFinished() const
+{
+  return siteEventQueue.size() == 0 && circleEventQueue.size() == 0;
+}
+
+void SphericalVoronoiCore::dumpBeachState(std::ostream& stream)
+{
+  using namespace std;
+
+  stream << "  beach [";
+  for (auto itArc=beach.begin(); itArc!=beach.end(); ++itArc)
+  {
+    auto arc = *itArc;
+    stream << arc->pCell->index;
+    if (arc->circleEvent)
     {
-        return siteEventQueue.size() == 0 && circleEventQueue.size() == 0;
+      auto itPrevArc = getPrevArcOnBeach(itArc);
+      auto itNextArc = getNextArcOnBeach(itArc);
+      assert(arc->circleEvent->arc_j == arc);
+      assert(arc->circleEvent->arc_i == *itPrevArc);
+      assert(arc->circleEvent->arc_k == *itNextArc);
+      stream << "*";
+    }
+    stream << ",";
+  }
+  stream << "]" << endl;
+}
+
+void SphericalVoronoiCore::step(Real maxDeltaXi)
+{
+  using namespace std;
+
+  if (!isFinished())
+  {
+    Real nextXi = scanLine.xi + maxDeltaXi;
+
+    SV_DEBUG(cout << "step " << nbSteps << " " << scanLine.xi);
+
+    if (siteEventQueue.size() > 0 && (circleEventQueue.size() == 0 || siteEventQueue[0].theta < circleEventQueue[0]->theta))
+    {
+      auto se = siteEventQueue[0];
+      if (se.theta <= nextXi)
+      {
+        scanLine.xi = se.theta;
+        SV_DEBUG(cout << " -> " << scanLine.xi << endl);
+        SV_DEBUG(dumpBeachState(cout));
+        handleSiteEvent(se);
+        siteEventQueue.erase(siteEventQueue.begin());
+        SV_DEBUG(dumpBeachState(cout));
+      }
+      else
+      {
+        scanLine.xi = nextXi;
+        SV_DEBUG(cout << " -> " << scanLine.xi << endl);
+      }
+    }
+    else if (circleEventQueue.size() > 0)
+    {
+      auto ce = circleEventQueue[0];
+      if (ce->theta <= nextXi)
+      {
+        scanLine.xi = ce->theta;
+        SV_DEBUG(cout << " -> " << scanLine.xi << endl);
+        SV_DEBUG(dumpBeachState(cout));
+        handleCircleEvent(ce);
+        circleEventQueue.erase(circleEventQueue.begin());
+        SV_DEBUG(dumpBeachState(cout));
+      }
+      else
+      {
+        scanLine.xi = nextXi;
+        SV_DEBUG(cout << " -> " << scanLine.xi << endl);
+      }
+    }
+    else
+    {
+      scanLine.xi = nextXi;
+      SV_DEBUG(cout << " -> " << scanLine.xi << endl);
     }
 
-    void SphericalVoronoiCore::dumpBeachState(std::ostream& stream)
+    if (isFinished())
     {
-        using namespace std;
-
-        stream << "  beach [";
-        for (auto itArc=beach.begin(); itArc!=beach.end(); ++itArc)
-        {
-            auto arc = *itArc;
-            stream << arc->pCell->index;
-            if (arc->circleEvent)
-            {
-                auto itPrevArc = getPrevArcOnBeach(itArc);
-                auto itNextArc = getNextArcOnBeach(itArc);
-                assert(arc->circleEvent->arc_j == arc);
-                assert(arc->circleEvent->arc_i == *itPrevArc);
-                assert(arc->circleEvent->arc_k == *itNextArc);
-                stream << "*";
-            }
-            stream << ",";
-        }
-        stream << "]" << endl;
+      finializeGraph();
     }
 
-    void SphericalVoronoiCore::step(Real maxDeltaXi)
+    if (debugMode)
     {
-        using namespace std;
-
-        if (!isFinished())
-        {
-            Real nextXi = scanLine.xi + maxDeltaXi;
-
-            SV_DEBUG(cout << "step " << nbSteps << " " << scanLine.xi);
-
-            if (siteEventQueue.size() > 0 && (circleEventQueue.size() == 0 || siteEventQueue[0].theta < circleEventQueue[0]->theta))
-            {
-                auto se = siteEventQueue[0];
-                if (se.theta <= nextXi)
-                {
-                    scanLine.xi = se.theta;
-                    SV_DEBUG(cout << " -> " << scanLine.xi << endl);
-                    SV_DEBUG(dumpBeachState(cout));
-                    handleSiteEvent(se);
-                    siteEventQueue.erase(siteEventQueue.begin());
-                    SV_DEBUG(dumpBeachState(cout));
-                }
-                else
-                {
-                    scanLine.xi = nextXi;
-                    SV_DEBUG(cout << " -> " << scanLine.xi << endl);
-                }
-            }
-            else if (circleEventQueue.size() > 0)
-            {
-                auto ce = circleEventQueue[0];
-                if (ce->theta <= nextXi)
-                {
-                    scanLine.xi = ce->theta;
-                    SV_DEBUG(cout << " -> " << scanLine.xi << endl);
-                    SV_DEBUG(dumpBeachState(cout));
-                    handleCircleEvent(ce);
-                    circleEventQueue.erase(circleEventQueue.begin());
-                    SV_DEBUG(dumpBeachState(cout));
-                }
-                else
-                {
-                    scanLine.xi = nextXi;
-                    SV_DEBUG(cout << " -> " << scanLine.xi << endl);
-                }
-            }
-            else
-            {
-                scanLine.xi = nextXi;
-                SV_DEBUG(cout << " -> " << scanLine.xi << endl);
-            }
-
-            if (isFinished())
-            {
-                finializeGraph();
-            }
-
-            if (debugMode)
-            {
-                SV_DEBUG(cout << "=================" << endl);
-            }
-
-            ++ nbSteps;
-        }
+      SV_DEBUG(cout << "=================" << endl);
     }
 
-    void SphericalVoronoiCore::solve(std::function<void(int)> cb)
-    {
-        int nbSteps = 0;
-        while (!isFinished())
-        {
-            step(M_PI * 4);
-            ++nbSteps;
-            if (cb)
-            {
-                cb(nbSteps);
-            }
-        }
-    }
+    ++ nbSteps;
+  }
+}
 
-    void SphericalVoronoiCore::finializeGraph()
+void SphericalVoronoiCore::solve(std::function<void(int)> cb)
+{
+  int nbSteps = 0;
+  while (!isFinished())
+  {
+    step(M_PI * 4);
+    ++nbSteps;
+    if (cb)
     {
+      cb(nbSteps);
+    }
+  }
+}
+
+void SphericalVoronoiCore::finializeGraph()
+{
         using namespace std;
 
         SV_DEBUG(cout << "Finalize graph" << endl);

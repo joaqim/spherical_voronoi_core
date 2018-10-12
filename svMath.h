@@ -226,6 +226,11 @@ inline auto normalize(Real3 const val ) {
      }
 
 
+     void calculateCubeSet() {
+
+     }
+
+
      //NOTE: Redefinition when using float instead of double
      /*
        Point(const F3& pos)
