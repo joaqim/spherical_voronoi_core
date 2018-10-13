@@ -46,6 +46,10 @@ using namespace glm;
 #define ROUND_TO_INT(val)      xs_RoundToInt(val)
 #define CEIL_TO_INT(val)       xs_CeilToInt(val)
 
+#ifndef _MATH_DEFINES_DEFINED
+#define M_PI 3.14159265358979323846
+#endif
+
 #include <Magnum/Math/Vector2.h>
 #include <Magnum/Math/Vector3.h>
 #include <Magnum/Math/Vector4.h>

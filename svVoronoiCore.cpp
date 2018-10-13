@@ -84,7 +84,8 @@ SphericalVoronoiCore::SphericalVoronoiCore(const std::vector<Real3>& directions)
 
 bool SphericalVoronoiCore::isFinished() const
 {
-  return siteEventQueue.size() == 0 && circleEventQueue.size() == 0;
+  //return siteEventQueue.size() == 0 && circleEventQueue.size() == 0;
+  return siteEventQueue.size() == 0 && getCircleEventQueueSize() == 0;
 }
 
 void SphericalVoronoiCore::dumpBeachState(std::ostream& stream)
@@ -120,16 +121,20 @@ void SphericalVoronoiCore::step(Real maxDeltaXi)
 
     SV_DEBUG(cout << "step " << nbSteps << " " << scanLine.xi);
 
-    if (siteEventQueue.size() > 0 && (circleEventQueue.size() == 0 || siteEventQueue[0].theta < circleEventQueue[0]->theta))
+    //if (siteEventQueue.size() > 0 && (circleEventQueue.size() == 0 || siteEventQueue[0].theta < circleEventQueue[0]->theta))
+    if (siteEventQueue.size() > 0 && (getCircleEventQueueSize() == 0 || siteEventQueue[0].theta < getCircleEvent()->theta))
     {
-      auto se = siteEventQueue[0];
+      //auto se = siteEventQueue[0];
+      std::pop_heap(siteEventQueue.begin(), siteEventQueue.end(), std::greater_equal<>{});
+      auto se = siteEventQueue.back();
       if (se.theta <= nextXi)
       {
         scanLine.xi = se.theta;
         SV_DEBUG(cout << " -> " << scanLine.xi << endl);
         SV_DEBUG(dumpBeachState(cout));
         handleSiteEvent(se);
-        siteEventQueue.erase(siteEventQueue.begin());
+        //siteEventQueue.erase(siteEventQueue.begin());
+        siteEventQueue.pop_back();
         SV_DEBUG(dumpBeachState(cout));
       }
       else
@@ -138,16 +143,19 @@ void SphericalVoronoiCore::step(Real maxDeltaXi)
         SV_DEBUG(cout << " -> " << scanLine.xi << endl);
       }
     }
-    else if (circleEventQueue.size() > 0)
+    //else if (circleEventQueue.size() > 0)
+    else if (getCircleEventQueueSize() > 0)
     {
-      auto ce = circleEventQueue[0];
+      // auto ce = circleEventQueue[0];
+      auto ce = getCircleEvent();
       if (ce->theta <= nextXi)
       {
         scanLine.xi = ce->theta;
         SV_DEBUG(cout << " -> " << scanLine.xi << endl);
         SV_DEBUG(dumpBeachState(cout));
         handleCircleEvent(ce);
-        circleEventQueue.erase(circleEventQueue.begin());
+        //circleEventQueue.erase(circleEventQueue.begin());
+        popCircleEvent();
         SV_DEBUG(dumpBeachState(cout));
       }
       else
@@ -156,11 +164,11 @@ void SphericalVoronoiCore::step(Real maxDeltaXi)
         SV_DEBUG(cout << " -> " << scanLine.xi << endl);
       }
     }
-    else
-    {
-      scanLine.xi = nextXi;
-      SV_DEBUG(cout << " -> " << scanLine.xi << endl);
-    }
+      else
+      {
+        scanLine.xi = nextXi;
+        SV_DEBUG(cout << " -> " << scanLine.xi << endl);
+      }
 
     if (isFinished())
     {
@@ -209,14 +217,14 @@ void SphericalVoronoiCore::finializeGraph()
 
         for (size_t i=0; i<halfEdges.size(); ++i)
         {
-            halfEdges[i]->index = (uint32_t)i;
+          halfEdges[i]->index = uint32_t(i);
         }
 
         for (size_t i=0; i<vertices.size(); ++i)
         {
-            vertices[i]->index = (uint32_t)i;
+          vertices[i]->index = uint32_t(i);
         }
-    }
+}
 
     void SphericalVoronoiCore::cleanupMiddleVertices()
     {
@@ -490,8 +498,12 @@ void SphericalVoronoiCore::finializeGraph()
 
                 Point pointPrev, pointNext;
                 bool intPrev, intNext;
-                intPrev = intersectWithPrevArc(itArc, scanLine.xi, pointPrev);
-                intNext = intersectWithNextArc(itArc, scanLine.xi, pointNext);
+                //intPrev = intersectWithPrevArc(itArc, scanLine.xi, pointPrev);
+                //intNext = intersectWithNextArc(itArc, scanLine.xi, pointNext);
+                assert(itArc != itPrevArc);
+                assert(itArc != itNextArc);
+                intPrev = arcsIntersection(**itPrevArc, **itArc, scanLine.xi, pointPrev);
+                intNext = arcsIntersection(**itArc, **itNextArc, scanLine.xi, pointNext);
 
                 Real phi_start = arc->pCell->point.phi - M_PI;
                 if (intPrev)
@@ -547,7 +559,8 @@ void SphericalVoronoiCore::finializeGraph()
                     itArc2 = getNextArcOnBeach(itPrevArc);
                     itNewArc = getNextArcOnBeach(itArc2);
                     itArc = getNextArcOnBeach(itNewArc);
-                    itNextArc = getNextArcOnBeach(itNextArc);
+                    //itNextArc = getNextArcOnBeach(itNextArc);
+                    itNextArc = getNextArcOnBeach(itArc);
 
                     auto ce1 = make_shared<circle_event>(prevArc, arc2, newArc);
                     if (ce1->theta >= event.theta)
